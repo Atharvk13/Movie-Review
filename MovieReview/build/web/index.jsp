@@ -1,0 +1,518 @@
+<%@page import="java.sql.*"%>
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>My Movie Reviews</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+        <style>
+            /* === CSS GOES HERE === */
+            /* Reset & base */
+            * {
+                box-sizing: border-box;
+            }
+            body {
+                margin: 0;
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+                background-color: #f0eaff;
+                color: #3d0075;
+                min-height: 100vh;
+                transition: background-color 0.3s, color 0.3s;
+            }
+            .hidden {
+                display: none;
+            }
+            nav {
+                background: #7a4fff;
+                color: white;
+                padding: 15px 20px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            nav .nav-left {
+                font-weight: 700;
+                font-size: 1.3rem;
+            }
+            nav .nav-right button {
+                background: transparent;
+                border: 2px solid white;
+                color: white;
+                margin-left: 12px;
+                padding: 6px 14px;
+                border-radius: 8px;
+                cursor: pointer;
+                font-weight: 600;
+                transition: background-color 0.3s, color 0.3s;
+            }
+            nav .nav-right button:hover {
+                background-color: white;
+                color: #7a4fff;
+            }
+            main {
+                max-width: 900px;
+                margin: 25px auto;
+                padding: 0 15px;
+            }
+            #reviewList {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 20px;
+                justify-content: flex-start;
+            }
+            .review-card {
+                background: #9f81ff;
+                width: 260px;
+                border-radius: 15px;
+                overflow: hidden;
+                cursor: pointer;
+                box-shadow: 0 5px 15px rgba(122, 79, 255, 0.5);
+                display: flex;
+                flex-direction: column;
+                transition: transform 0.3s ease;
+            }
+            .review-card:hover {
+                transform: scale(1.04);
+            }
+            .review-card img {
+                width: 100%;
+                height: 140px;
+                object-fit: cover;
+                background-color: #4b0082;
+            }
+            .review-content {
+                padding: 12px 15px;
+                flex-grow: 1;
+                display: flex;
+                flex-direction: column;
+            }
+            .review-content h3 {
+                margin: 0 0 6px 0;
+                color: #fff;
+                font-size: 1.2rem;
+            }
+            .review-content p {
+                margin: 0 0 12px 0;
+                font-size: 0.95rem;
+                color: #eee;
+                flex-grow: 1;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: normal;
+                max-height: 3.3em;
+            }
+            .ratings {
+                display: flex;
+                justify-content: space-between;
+                font-weight: 700;
+                color: #e0ccff;
+                font-size: 0.9rem;
+            }
+            #addReviewSection {
+                background: #7a4fff;
+                border-radius: 15px;
+                padding: 25px 20px;
+                color: white;
+                margin-top: 30px;
+            }
+            #addReviewSection label {
+                display: block;
+                margin-bottom: 15px;
+                font-weight: 600;
+            }
+            #addReviewSection input,
+            #addReviewSection textarea {
+                width: 100%;
+                padding: 8px 10px;
+                border-radius: 8px;
+                border: none;
+                font-size: 1rem;
+                font-family: inherit;
+            }
+            #imagePreviewContainer {
+                margin-bottom: 15px;
+                text-align: center;
+            }
+            #imagePreview {
+                max-width: 200px;
+                max-height: 140px;
+                border-radius: 12px;
+                object-fit: contain;
+                border: 2px solid #4b0082;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            }
+            .form-buttons {
+                display: flex;
+                gap: 15px;
+            }
+            .form-buttons button {
+                background: #4b0082;
+                border: none;
+                color: white;
+                padding: 10px 16px;
+                border-radius: 10px;
+                cursor: pointer;
+                font-weight: 700;
+            }
+            .form-buttons button:hover {
+                background: #2e0057;
+            }
+            .form-buttons #deleteBtn {
+                background: #cc3366;
+            }
+            .form-buttons #deleteBtn:hover {
+                background: #991f3a;
+            }
+            body.dark {
+                background-color: #000000;
+                color: #c9bfff;
+            }
+            body.dark nav {
+                background: #4b0082;
+            }
+            body.dark .review-card {
+                background: #290b67;
+                box-shadow: 0 5px 15px #6a4b9b;
+            }
+            body.dark .review-content h3,
+            body.dark .review-content p,
+            body.dark .ratings {
+                color: #d1b3ff;
+            }
+            body.dark #addReviewSection {
+                background: #290b67;
+            }
+            body.dark #addReviewSection input,
+            body.dark #addReviewSection textarea {
+                background: #3c1a7f;
+                color: #ddd;
+            }
+            .about-me {
+                margin-top: 50px;
+                padding: 30px 20px;
+                background-color: #e8dcff;
+                border-top: 4px solid #7a4fff;
+                display: flex;
+                gap: 20px;
+                flex-wrap: wrap;
+                align-items: center;
+                border-radius: 12px;
+            }
+            .about-photo {
+                width: 90px;
+                height: 90px;
+                border-radius: 50%;
+                object-fit: cover;
+                border: 3px solid #7a4fff;
+                box-shadow: 0 0 8px #7a4fff77;
+            }
+            .about-text h3 {
+                margin: 0 0 10px 0;
+                font-size: 1.4rem;
+                color: #4b0082;
+            }
+            .about-text p {
+                margin: 0 0 15px 0;
+                font-size: 1rem;
+            }
+            .social-links a {
+                color: #7a4fff;
+                margin-right: 12px;
+            }
+            .social-links a:hover {
+                text-decoration: underline;
+            }
+            body.dark .about-me {
+                background-color: #1a0033;
+            }
+            body.dark .about-photo {
+                border-color: #a370ff;
+            }
+            body.dark .about-text h3,
+            body.dark .about-text p,
+            body.dark .social-links a {
+                color: #d1b3ff;
+            }
+            #darkModeToggle {
+                background: none;
+                border: none;
+                font-size: 1.4rem;
+                cursor: pointer;
+                color: #333;
+            }
+            body.dark #darkModeToggle {
+                color: #f1c40f;
+            }
+            /* Styles for the JSP review cards from your second block */
+            .review-container {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: flex-start; /* aligned to left like #reviewList */
+                gap: 20px;
+                margin-top: 30px;
+            }
+            .review-container .review-card {
+                background-color: #9f81ff;
+                width: 260px;
+                border-radius: 15px;
+                overflow: hidden;
+                cursor: pointer;
+                box-shadow: 0 5px 15px rgba(122, 79, 255, 0.5);
+                display: flex;
+                flex-direction: column;
+                transition: transform 0.3s ease;
+            }
+            .review-container .review-card:hover {
+                transform: scale(1.04);
+            }
+            .review-container .review-card img {
+                width: 100%;
+                height: 140px;
+                object-fit: cover;
+                background-color: #4b0082;
+            }
+            .review-container .review-content {
+                padding: 12px 15px;
+                flex-grow: 1;
+                display: flex;
+                flex-direction: column;
+            }
+            .review-container .review-content h3 {
+                margin: 0 0 6px 0;
+                color: #fff;
+                font-size: 1.2rem;
+            }
+            .review-container .review-content p {
+                margin: 0 0 12px 0;
+                font-size: 0.95rem;
+                color: #eee;
+                flex-grow: 1;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: normal;
+                max-height: 3.3em;
+            }
+        </style>
+    </head>
+    <body>
+        <nav>
+            <div class="nav-left">My Movie Reviews</div>
+            <div class="nav-right">
+                <button id="addBtn">Add Review</button>
+                <button id="darkModeToggle" title="Toggle Dark Mode">
+                    <i id="themeIcon" class="fas fa-moon"></i>
+                </button>
+            </div>
+        </nav>
+
+        <main>
+            <section id="reviewList" class="review-container">
+                <%-- JSP block to fetch and display reviews from DB --%>
+                <%
+                    Connection con = null;
+                    Statement st = null;
+                    ResultSet rs = null;
+
+                    try {
+//                        Class.forName("com.mysql.jdbc.Driver");
+//                        con = DriverManager.getConnection("jdbc:mysql://localhost:3306/moviereview", "root", "root");
+                        Class.forName("org.postgresql.Driver");
+                        String url = "jdbc:postgresql://dpg-d0s4nf6mcj7s73f154ag-a:5432/movie_review_db_4mip";
+                        String user = "movie_review_db_4mip_user";
+                        String password = "ItO0YeTE1ryatdS0GARLhq6MtGEPN5rO";
+
+                        Connection conn = DriverManager.getConnection(url, user, password);
+
+                        st = con.createStatement();
+                        String query = "SELECT title, description, my_rating, imdb_rating, image_path FROM moviereview";
+                        rs = st.executeQuery(query);
+
+                        while (rs.next()) {
+                            String imageUrl = rs.getString("image_path");
+                            String title = rs.getString("title");
+                %>
+                <div class="review-card" 
+                     onclick="window.location.href = 'review.jsp?title=<%= java.net.URLEncoder.encode(title, "UTF-8")%>'" 
+                     style="cursor:pointer;">
+                    <img src="<%= imageUrl%>" alt="Movie Image" />
+                    <div class="review-content">
+                        <h3><%= title%></h3>
+                        <p><strong>Description:</strong> <%= rs.getString("description")%></p>
+                        <div class="ratings">
+                            <span><strong>My Rating:</strong> <%= rs.getString("my_rating")%></span>
+                            <span><strong>Imdb Rating:</strong> <%= rs.getString("imdb_rating")%></span>
+                        </div>
+                    </div>
+                </div>
+                <%
+
+                        }
+                    } catch (Exception e) {
+                        out.println("<p>Error: " + e.getMessage() + "</p>");
+                        e.printStackTrace();
+                    } finally {
+                        try {
+                            if (rs != null) {
+                                rs.close();
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        try {
+                            if (st != null) {
+                                st.close();
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        try {
+                            if (con != null) {
+                                con.close();
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                %>
+            </section>
+
+            <section id="addReviewSection" class="hidden">
+                <h2>Add/Edit Review</h2>
+                <form id="reviewForm" action="Insert" method="post" enctype="multipart/form-data" >
+                    <label>
+                        Movie Title:
+                        <input type="text" id="title" name="title" required />
+                    </label>
+                    <label>
+                        Description:
+                        <input type="text" id="desc" name="desc" required />
+                    </label>
+                    <label>
+                        Full Review:
+                        <textarea id="review" name="review" rows="6" required></textarea>
+                    </label>
+                    <label>
+                        Your Rating (0-10):
+                        <input type="number" id="myRating" name="myRating" min="0" max="10" required />
+                    </label>
+                    <label>
+                        IMDb Rating (0-10):
+                        <input type="number" id="imdbRating" name="imdbRating" min="0" max="10" required />
+                    </label>
+                    <label>
+                        Movie Image:
+                        <input type="file" id="imageInput" name="imageInput" accept="image/*" />
+                    </label>
+                    <div id="imagePreviewContainer" class="hidden">
+                        <img id="imagePreview" alt="Image Preview" />
+                    </div>
+                    <div class="form-buttons">
+                        <button type="submit" id="saveBtn">Save Review</button>
+                        <button type="button" id="cancelBtn">Cancel</button>
+                        <button type="button" id="deleteBtn" class="hidden">Delete Review</button>
+                    </div>
+                </form>
+
+            </section>
+
+            <section class="about-me">
+                <img src="ak.jpeg" alt="Atharv's Photo" class="about-photo" id="aboutPhoto" />
+                <div class="about-text">
+                    <h3>Atharv Kanungo</h3>
+                    <p>Hi, I’m Atharv – an engineering student with a passion for creativity, curiosity, and a deep appreciation for storytelling. Currently pursuing my degree in engineering, I’ve always been fascinated by how things work — whether it’s the logic behind a line of code, the intricate structure of a machine, or the emotions woven into a beautifully told story.
+
+                        Outside of academics, football is my ultimate escape. Whether I’m on the field or cheering from the sidelines, the thrill of the game, the strategy, and the team spirit make it an essential part of who I am. It’s not just a sport to me — it’s a way to challenge myself, stay fit, and enjoy the competitive edge of life.
+
+                        Another huge part of my identity is my love for movies. I’ve watched countless films over the years, and every story leaves a unique impact. I especially enjoy romantic comedies that blend humor with heartfelt moments, sci-fi movies that stretch the imagination and explore the possibilities of the future, and mystery thrillers that keep you guessing until the final scene. These genres speak to different sides of my personality — the dreamer, the thinker, and the seeker of truth.
+
+                        Whether it’s through engineering, football, or film, I’m always looking to learn, grow, and experience life from new perspectives. I believe that passion and curiosity are the driving forces behind innovation and personal growth — and I’m excited to keep exploring both.
+                    </p>
+                    <div class="social-links">
+                        <a href="https://www.instagram.com/Atharvkanungo_13" target="_blank" title="Instagram">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                        <a href="https://www.youtube.com/@AtharvKanungo-gi7em" target="_blank" title="YouTube">
+                            <i class="fab fa-youtube"></i>
+                        </a>
+                        <a href="https://www.linkedin.com/in/atharv-kanungo-6a8b771b6" target="_blank" title="LinkedIn">
+                            <i class="fab fa-linkedin"></i>
+                        </a>
+                        <a href="mailto:kanungoatharv@gmail.com" title="Gmail">
+                            <i class="fas fa-envelope"></i>
+                        </a>
+                    </div>
+                </div>
+            </section>
+
+
+
+        </main>
+
+        <script>
+            // Dark mode toggle
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            const themeIcon = document.getElementById('themeIcon');
+
+            function setDarkMode(enabled) {
+                if (enabled) {
+                    document.body.classList.add('dark');
+                    themeIcon.classList.remove('fa-moon');
+                    themeIcon.classList.add('fa-sun');
+                    localStorage.setItem('darkMode', 'true');
+                } else {
+                    document.body.classList.remove('dark');
+                    themeIcon.classList.remove('fa-sun');
+                    themeIcon.classList.add('fa-moon');
+                    localStorage.setItem('darkMode', 'false');
+                }
+            }
+
+            darkModeToggle.addEventListener('click', () => {
+                const isDark = document.body.classList.contains('dark');
+                setDarkMode(!isDark);
+            });
+
+            // Initialize theme from localStorage
+            const savedDarkMode = localStorage.getItem('darkMode');
+            if (savedDarkMode === 'true') {
+                setDarkMode(true);
+            } else {
+                setDarkMode(false);
+            }
+
+            // Show/hide add review form
+            const addBtn = document.getElementById('addBtn');
+            const addReviewSection = document.getElementById('addReviewSection');
+            const cancelBtn = document.getElementById('cancelBtn');
+
+            addBtn.addEventListener('click', () => {
+                addReviewSection.classList.remove('hidden');
+                window.scrollTo({top: addReviewSection.offsetTop, behavior: 'smooth'});
+            });
+
+            cancelBtn.addEventListener('click', () => {
+                addReviewSection.classList.add('hidden');
+                document.getElementById('reviewForm').reset();
+                document.getElementById('imagePreviewContainer').style.display = 'none';
+            });
+
+            // Image preview for URL
+            const imageInput = document.getElementById('image');
+            const imagePreview = document.getElementById('imagePreview');
+            const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+
+            imageInput.addEventListener('input', () => {
+                const url = imageInput.value.trim();
+                if (url) {
+                    imagePreview.src = url;
+                    imagePreviewContainer.style.display = 'block';
+                } else {
+                    imagePreviewContainer.style.display = 'none';
+                }
+            });
+
+        </script>
+    </body>
+</html>
